@@ -5,7 +5,7 @@
     "license": "MIT",
     "type": "library",
     "bin": [
-        "bin/dev-server"
+        "bin/bref-dev-server"
     ],
     "autoload": {
         "psr-4": {
