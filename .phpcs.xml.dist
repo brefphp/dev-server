@@ -6,4 +6,16 @@
     <file>tests</file>
 
     <rule ref="HardMode"/>
+
+    <rule ref="Generic.ControlStructures.InlineControlStructure.NotAllowed">
+        <severity>0</severity>
+    </rule>
+
+    <!-- Waiting for PHP 8 support-->
+    <rule ref="PSR12.Operators.OperatorSpacing.NoSpaceBefore">
+        <severity>0</severity>
+    </rule>
+    <rule ref="PSR12.Operators.OperatorSpacing.NoSpaceAfter">
+        <severity>0</severity>
+    </rule>
 </ruleset>
