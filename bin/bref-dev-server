@@ -22,7 +22,7 @@ $app->command('run [-a|--assets=]', function (OutputInterface $output, ?string $
     $output->writeln("<info>Serving PHP from serverless.yml routes</info>");
     $output->writeln("<info>Serving assets from $assetsDirectory/</info>");
 
-    $server = new Process(['php', '-S', '127.0.0.1:8000', $handler, '-t', $assetsDirectory]);
+    $server = new Process(['php', '-S', '127.0.0.1:8000', '-t', $assetsDirectory, $handler]);
     $server->setTimeout(null);
     $server->setTty(true);
     $server->setEnv([
