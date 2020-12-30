@@ -1,10 +1,10 @@
 Development web server for serverless-native PHP web apps.
 
-**This project is currently experimental and the documentation incomplete.**
-
 ## Why?
 
 This web server is meant for HTTP applications implemented without framework, using API Gateway as the router and PSR-15 controllers.
+
+It is also meant to be used with the [Bref Micro](https://github.com/brefphp/micro) framework.
 
 ## Installation
 
@@ -17,5 +17,19 @@ composer require --dev bref/dev-server
 Run the webserver with:
 
 ```bash
-php -S 127.0.0.1:8000 vendor/bin/bref-dev-server
+vendor/bin/bref-dev-server
+```
+
+The application will be available at [http://localhost:8000/](http://localhost:8000/).
+
+Routes will be parsed from `serverless.yml` in the current directory.
+
+### Assets
+
+By default, static assets are served from the current directory.
+
+To customize that, use the `--assets` option. For example to serve static files from the `public/` directory:
+
+```bash
+vendor/bin/bref-dev-server --assets public
 ```

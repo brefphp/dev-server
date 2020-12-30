@@ -2,46 +2,25 @@
 
 namespace Bref\DevServer;
 
-use Bref\Bref;
-use Nyholm\Psr7\Factory\Psr17Factory;
-use Nyholm\Psr7Server\ServerRequestCreator;
-use Symfony\Component\Yaml\Yaml;
-use Whoops\Handler\PrettyPageHandler;
-use Whoops\Run;
+use Symfony\Component\Process\Process;
 
 class DevServer
 {
-    public function run(): bool|null
+    public function run(): void
     {
-        // Serve assets
-        if (PHP_SAPI === 'cli-server') {
-            $url = parse_url($_SERVER['REQUEST_URI']);
-            if (is_file(getcwd() . '/web' . ($url['path'] ?? ''))) return false;
-        }
+        $handler = __DIR__ . '/server-handler.php';
+        $assetsDirectory = getcwd();
 
-        $whoops = new Run;
-        $whoops->pushHandler(new PrettyPageHandler);
-        $whoops->register();
+        $server = new Process(['php', '-S', '127.0.0.1:8000', $handler, '-t', $assetsDirectory]);
+        $server->setTimeout(null);
+        $server->setTty(true);
+        $server->setEnv([
+            'PHP_CLI_SERVER_WORKERS' => 2,
+            Handler::ASSETS_DIRECTORY_VARIABLE => $assetsDirectory,
+        ]);
 
-        $container = Bref::getContainer();
+        $server->run();
 
-        $psr17Factory = new Psr17Factory;
-        $requestFactory = new ServerRequestCreator(
-            $psr17Factory,
-            $psr17Factory,
-            $psr17Factory,
-            $psr17Factory
-        );
-
-        $serverlessConfig = Yaml::parseFile(getcwd() . '/serverless.yml', Yaml::PARSE_CUSTOM_TAGS);
-        $router = Router::fromServerlessConfig($serverlessConfig);
-
-        $request = $requestFactory->fromGlobals();
-        [$handler, $request] = $router->match($request);
-        $controller = $handler ? $container->get($handler) : new NotFound;
-        $response = $controller->handle($request);
-        (new ResponseEmitter)->emit($response);
-
-        return null;
+        exit($server->getExitCode());
     }
 }

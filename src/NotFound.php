@@ -14,6 +14,8 @@ class NotFound implements RequestHandlerInterface
 {
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        return new Response(404, [], 'Route not found in serverless.yml');
+        $url = $request->getUri()->getPath();
+
+        return new Response(404, [], "Route '$url' not found in serverless.yml");
     }
 }

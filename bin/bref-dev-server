@@ -1,13 +1,41 @@
+#!/usr/bin/env php
 <?php declare(strict_types=1);
 
-use Bref\DevServer\DevServer;
-
-if (file_exists(__DIR__ . '/vendor/autoload.php')) {
-    require_once __DIR__ . '/vendor/autoload.php';
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    require_once __DIR__ . '/../vendor/autoload.php';
 } elseif (file_exists(__DIR__ . '/../../autoload.php')) {
     require_once __DIR__ . '/../../autoload.php';
 } else {
     require_once __DIR__ . '/../../../autoload.php';
 }
 
-return (new DevServer)->run();
+use Bref\DevServer\Handler;
+use Silly\Application;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Process;
+
+$app = new Application('Bref dev server');
+
+$app->command('run [-a|--assets=]', function (OutputInterface $output, ?string $assets = null) {
+    $handler = __DIR__ . '/../src/server-handler.php';
+    $assetsDirectory = $assets ?: getcwd();
+    $output->writeln("<info>Serving PHP from serverless.yml routes</info>");
+    $output->writeln("<info>Serving assets from $assetsDirectory/</info>");
+
+    $server = new Process(['php', '-S', '127.0.0.1:8000', $handler, '-t', $assetsDirectory]);
+    $server->setTimeout(null);
+    $server->setTty(true);
+    $server->setEnv([
+        'PHP_CLI_SERVER_WORKERS' => 2,
+        Handler::ASSETS_DIRECTORY_VARIABLE => $assetsDirectory,
+    ]);
+
+    $server->run();
+
+    exit($server->getExitCode());
+})->descriptions('Run the development server', [
+    '--assets' => 'The directory where static assets can be found. By default it is the current directory.',
+]);
+
+$app->setDefaultCommand('run');
+$app->run();
