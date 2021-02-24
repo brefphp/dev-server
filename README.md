@@ -31,5 +31,5 @@ By default, static assets are served from the current directory.
 To customize that, use the `--assets` option. For example to serve static files from the `public/` directory:
 
 ```bash
-vendor/bin/bref-dev-server --assets public
+vendor/bin/bref-dev-server --assets=public
 ```
