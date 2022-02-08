@@ -18,7 +18,7 @@
         }
     },
     "require": {
-        "php": ">=8.0",
+        "php": ">=7.0",
         "bref/bref": "^1.0",
         "filp/whoops": "^2.5",
         "mnapoli/silly": "^1.5",
