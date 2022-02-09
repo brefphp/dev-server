@@ -18,7 +18,7 @@ class Handler
 {
     public const ASSETS_DIRECTORY_VARIABLE = '_BREF_LOCAL_ASSETS_DIRECTORY';
 
-    public function handleRequest(): bool|null
+    public function handleRequest()
     {
         $assetsDirectory = getenv(self::ASSETS_DIRECTORY_VARIABLE);
 

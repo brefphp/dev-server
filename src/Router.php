@@ -26,10 +26,13 @@ class Router
     {
         $routes = [];
         foreach ($serverlessConfig['functions'] as $function) {
-            $pattern = $function['events'][0]['httpApi'] ?? null;
-            if (! $pattern) continue;
-            $routes[$pattern] = $function['handler'];
+            foreach ($function['events'] as $event) {
+                $pattern = $event['httpApi'];
+                if (! $pattern) continue;
+                $routes[$pattern] = $function['handler'];
+            }
         }
+        print_r($routes);
         return new self($routes);
     }
 
@@ -43,6 +46,7 @@ class Router
             if ($pattern === '*') return [$handler, $request];
 
             [$httpMethod, $pathPattern] = explode(' ', $pattern);
+            // print_r($pathPattern);
             if ($this->matchesMethod($request, $httpMethod) && $this->matchesPath($request, $pathPattern)) {
                 $request = $this->addPathParameters($request, $pathPattern);
 
@@ -64,7 +68,6 @@ class Router
     private function matchesPath(ServerRequestInterface $request, string $pathPattern): bool
     {
         $requestPath = $request->getUri()->getPath();
-
         // No path parameter
         if (! str_contains($pathPattern, '{')) {
             return $requestPath === $pathPattern;
@@ -75,7 +78,7 @@ class Router
         return preg_match($pathRegex, $requestPath) === 1;
     }
 
-    private function addPathParameters(ServerRequestInterface $request, mixed $pathPattern): ServerRequestInterface
+    private function addPathParameters(ServerRequestInterface $request, string $pathPattern): ServerRequestInterface
     {
         $requestPath = $request->getUri()->getPath();
 
