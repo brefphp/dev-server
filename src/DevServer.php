@@ -11,7 +11,7 @@ class DevServer
         $handler = __DIR__ . '/server-handler.php';
         $assetsDirectory = getcwd();
 
-        $server = new Process(['php', '-S', '127.0.0.1:8000', $handler, '-t', $assetsDirectory]);
+        $server = new Process(['php', '-S', '0.0.0.0:8000', $handler, '-t', $assetsDirectory]);
         $server->setTimeout(null);
         $server->setTty(true);
         $server->setEnv([
