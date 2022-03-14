@@ -48,6 +48,45 @@ class RouterTest extends TestCase
         self::assertEquals('def', $router->match($this->request('GET', '/abc/def'))[0]);
     }
 
+    public function test routing from serverless config(): void
+    {
+        $stringHttpApiParameter = [
+            'functions' => [
+                'home' => [
+                    'handler' => 'home',
+                    'events' => [
+                        [
+                            'httpApi' => 'GET /',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $router1 = Router::fromServerlessConfig($stringHttpApiParameter);
+
+        self::assertEquals('home', $router1->match($this->request('GET', '/'))[0]);
+
+        $mappingHttpApiParameter = [
+            'functions' => [
+                'home' => [
+                    'handler' => 'home',
+                    'events' => [
+                        [
+                            'httpApi' => [
+                                'method' => 'GET',
+                                'path' => '/',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $router2 = Router::fromServerlessConfig($mappingHttpApiParameter);
+        self::assertEquals('home', $router2->match($this->request('GET', '/'))[0]);
+
+        self::assertEquals($router1, $router2);
+    }
+
     private function request(string $method, string $path): ServerRequestInterface
     {
         return new ServerRequest($method, $path);
