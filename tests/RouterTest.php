@@ -58,22 +58,18 @@ class RouterTest extends TestCase
                         [
                             'httpApi' => 'GET /',
                         ],
-                    ],
-                ],
-            ],
-        ];
-        $router1 = Router::fromServerlessConfig($stringHttpApiParameter);
-
-        self::assertEquals('home', $router1->match($this->request('GET', '/'))[0]);
-
-        $mappingHttpApiParameter = [
-            'functions' => [
-                'home' => [
-                    'handler' => 'home',
-                    'events' => [
+                        [
+                            'httpApi' => 'POST /',
+                        ],
                         [
                             'httpApi' => [
-                                'method' => 'GET',
+                                'method' => 'OPTION',
+                                'path' => '/',
+                            ],
+                        ],
+                        [
+                            'httpApi' => [
+                                'method' => 'DELETE',
                                 'path' => '/',
                             ],
                         ],
@@ -81,10 +77,12 @@ class RouterTest extends TestCase
                 ],
             ],
         ];
-        $router2 = Router::fromServerlessConfig($mappingHttpApiParameter);
-        self::assertEquals('home', $router2->match($this->request('GET', '/'))[0]);
+        $router = Router::fromServerlessConfig($stringHttpApiParameter);
 
-        self::assertEquals($router1, $router2);
+        self::assertEquals('home', $router->match($this->request('GET', '/'))[0]);
+        self::assertEquals('home', $router->match($this->request('POST', '/'))[0]);
+        self::assertEquals('home', $router->match($this->request('OPTION', '/'))[0]);
+        self::assertEquals('home', $router->match($this->request('DELETE', '/'))[0]);
     }
 
     private function request(string $method, string $path): ServerRequestInterface

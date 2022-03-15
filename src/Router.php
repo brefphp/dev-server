@@ -26,12 +26,18 @@ class Router
     {
         $routes = [];
         foreach ($serverlessConfig['functions'] as $function) {
-            $pattern = $function['events'][0]['httpApi'] ?? null;
-            if (! $pattern) continue;
-            if (is_array($pattern) && isset($pattern['method']) && isset($pattern['path'])) {
-                $pattern = "${pattern['method']} ${pattern['path']}";
+            foreach ($function['events'] as $event) {
+                $pattern = null;
+                $httpApi = $event['httpApi'];
+                if (is_string($httpApi)) {
+                    $pattern = $httpApi;
+                }
+                if (is_array($httpApi) && $httpApi['method'] && $httpApi['path']) {
+                    $pattern = "${httpApi['method']} ${httpApi['path']}";
+                }
+                if (! $pattern) continue;
+                $routes[$pattern] = $function['handler'];
             }
-            $routes[$pattern] = $function['handler'];
         }
         return new self($routes);
     }
