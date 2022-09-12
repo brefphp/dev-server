@@ -4,8 +4,6 @@ Development web server for serverless-native PHP web apps.
 
 This web server is meant for HTTP applications implemented without framework, using API Gateway as the router and PSR-15 controllers.
 
-It is also meant to be used with the [Bref Micro](https://github.com/brefphp/micro) framework.
-
 ## Installation
 
 ```bash
