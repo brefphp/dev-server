@@ -4,6 +4,8 @@ namespace Bref\DevServer;
 
 use Psr\Http\Message\ServerRequestInterface;
 
+use function is_array;
+
 /**
  * Reproduces API Gateway routing for local development.
  *
@@ -11,6 +13,44 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class Router
 {
+    public static function fromServerlessConfig(array $serverlessConfig): self
+    {
+        $routes = [];
+        foreach ($serverlessConfig['functions'] as $function) {
+            $pattern = $function['events'][0]['httpApi'] ?? null;
+
+            if (! $pattern) {
+                continue;
+            }
+
+            if (is_array($pattern)) {
+                $pattern = self::patternToString($pattern);
+            }
+
+            $routes[$pattern] = $function['handler'];
+        }
+
+        return new self($routes);
+    }
+
+    private static function patternToString(array $pattern): string
+    {
+        $method = $pattern['method'] ?? '*';
+        $path = $pattern['path'] ?? '*';
+
+        // Special "any" method MUST be converted to star.
+        if ($method === 'any') {
+            $method = '*';
+        }
+
+        // Alternative catch-all MUST be converted to standard catch-all.
+        if ($method === '*' && $path === '*') {
+            return '*';
+        }
+
+        return $method . ' ' . $path;
+    }
+
     /** @var array<string,string> */
     private array $routes;
 
@@ -20,17 +60,6 @@ class Router
     public function __construct(array $routes)
     {
         $this->routes = $routes;
-    }
-
-    public static function fromServerlessConfig(array $serverlessConfig): self
-    {
-        $routes = [];
-        foreach ($serverlessConfig['functions'] as $function) {
-            $pattern = $function['events'][0]['httpApi'] ?? null;
-            if (! $pattern) continue;
-            $routes[$pattern] = $function['handler'];
-        }
-        return new self($routes);
     }
 
     /**
@@ -58,7 +87,7 @@ class Router
     {
         $method = strtolower($method);
 
-        return ($method === 'any') || ($method === strtolower($request->getMethod()));
+        return ($method === '*') || ($method === strtolower($request->getMethod()));
     }
 
     private function matchesPath(ServerRequestInterface $request, string $pathPattern): bool
