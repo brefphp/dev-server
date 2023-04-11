@@ -19,7 +19,7 @@
     },
     "require": {
         "php": ">=8.0",
-        "bref/bref": "1 - 2",
+        "bref/bref": "^1.0 || ^2.0",
         "filp/whoops": "^2.5",
         "mnapoli/silly": "^1.5",
         "nyholm/psr7": "^1.0",
