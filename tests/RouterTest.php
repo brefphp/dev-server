@@ -50,11 +50,33 @@ class RouterTest extends TestCase
     }
 
     /**
+     * Test routing against function YAML configs
+     * 
+     * @param string $config YAML config string
+     * @param array{
+     *  request: \Nyholm\Psr7\ServerRequest, 
+     *  expected: ?string
+     * }[] $requests Array of requests to test
+     * 
      * @test
+     * @dataProvider expandedConfigProvider
      */
-    public function test_routing_expanded_config(): void
+    public function test_routing_expanded_config(string $config, array $requests): void
     {
-        $config = <<<YAML
+        $parsed_config = Yaml::parse($config);
+        $router = Router::fromServerlessConfig($parsed_config);
+
+        foreach ($requests as $request) {
+            self::assertSame($request['expected'], $router->match($request['request'])[0]);
+        }
+    }
+
+    /**
+     * Data provider for test_routing_expanded_config
+     */
+    public function expandedConfigProvider(): array 
+    {
+        $wildcard_array_config = <<<YAML
         functions:
           api:
             handler: api.php
@@ -64,13 +86,88 @@ class RouterTest extends TestCase
                   path: '*'
         YAML;
 
-        $config = Yaml::parse($config);
-        $router = Router::fromServerlessConfig($config);
+        $wildcard_config_as_array = [
+            'config' => $wildcard_array_config,
+            'requests' => [
+                [
+                    'request' => $this->request('GET', '/'),
+                    'expected' => 'api.php',
+                ],
+                [
+                    'request' => $this->request('POST', '/'),
+                    'expected' => 'api.php',
+                ],
+                [
+                    'request' => $this->request('GET', '/tests/1'),
+                    'expected' => 'api.php',
+                ],
+                [
+                    'request' => $this->request('PUT', '/tests/1'),
+                    'expected' => 'api.php',
+                ],  
+            ],
+        ];
 
-        self::assertSame('api.php', $router->match($this->request('GET', '/'))[0]);
-        self::assertSame('api.php', $router->match($this->request('POST', '/'))[0]);
-        self::assertSame('api.php', $router->match($this->request('GET', '/tests/1'))[0]);
-        self::assertSame('api.php', $router->match($this->request('PUT', '/tests/1'))[0]);
+        $string_upper_any_config = <<<YAML
+        functions:
+          api:
+            handler: api.php
+            events:
+                - httpApi: 'ANY /'
+        YAML;
+
+        $string_config_upper_any = [
+            'config' => $string_upper_any_config,
+            'requests' => [
+                [
+                    'request' => $this->request('POST', '/'),
+                    'expected' => 'api.php',
+                ],
+            ],
+        ];
+
+        $string_lower_any_config = <<<YAML
+        functions:
+          api:
+            handler: api.php
+            events:
+                - httpApi: 'any /'
+        YAML;
+
+        $string_config_lower_any = [
+            'config' => $string_lower_any_config,
+            'requests' => [
+                [
+                    'request' => $this->request('POST', '/'),
+                    'expected' => 'api.php',
+                ],
+            ],
+        ];
+
+        $string_wildcard_config = <<<YAML
+        functions:
+          api:
+            handler: api.php
+            events:
+                - httpApi: '*'
+        YAML;
+
+        $string_config_wildcard = [
+            'config' => $string_wildcard_config,
+            'requests' => [
+                [
+                    'request' => $this->request('POST', '/'),
+                    'expected' => 'api.php',
+                ],
+            ],
+        ];
+
+        return compact(
+            'wildcard_config_as_array',
+            'string_config_upper_any',
+            'string_config_lower_any',
+            'string_config_wildcard',
+        );
     }
 
     private function request(string $method, string $path): ServerRequestInterface

@@ -23,10 +23,11 @@ class Router
                 continue;
             }
 
-            if (is_array($pattern)) {
-                $pattern = self::patternToString($pattern);
+            if (is_string($pattern)) {
+                $pattern = array_combine(['method', 'path'], array_pad(explode(' ', $pattern, 2), 2, '*'));
             }
 
+            $pattern = self::patternToString($pattern);
             $routes[$pattern] = $function['handler'];
         }
 
@@ -39,7 +40,7 @@ class Router
         $path = $pattern['path'] ?? '*';
 
         // Special "any" method MUST be converted to star.
-        if ($method === 'any') {
+        if (strtolower($method) === 'any') {
             $method = '*';
         }
 
