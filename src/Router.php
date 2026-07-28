@@ -116,7 +116,7 @@ class Router
         $pathRegex = $this->patternToRegex($pathPattern);
         preg_match($pathRegex, $requestPath, $matches);
         foreach ($matches as $name => $value) {
-            $request = $request->withAttribute($name, $value);
+            $request = $request->withAttribute((string) $name, $value);
         }
 
         return $request;
