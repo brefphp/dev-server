@@ -3,6 +3,9 @@
 namespace Bref\DevServer;
 
 use Bref\Bref;
+use Bref\Context\Context;
+use Bref\Event\Http\HttpRequestEvent;
+use Crwlr\QueryString\Query;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Psr\Http\Message\ServerRequestInterface;
@@ -59,6 +62,31 @@ class Handler
             $psr17Factory,
             $psr17Factory
         );
-        return $requestFactory->fromGlobals();
+        $request = $requestFactory->fromGlobals();
+
+        // Request event can be built from either API v1, API v2 or ELB.
+        // Use a partial V2 event to build our HttpRequestEvent object here.
+        $body_stream = $request->getBody();
+        $event = new HttpRequestEvent([
+            'version' => '2.0',
+            'rawPath' => $request->getUri()->getPath(),
+            'rawQueryString' => Query::fromArray($request->getQueryParams())->toString(),
+            'requestContext'=> [
+                'http' => [
+                    'method' => $request->getMethod(),
+                    'protocol' => 'HTTP/' . $request->getProtocolVersion(),
+                ],
+            ],
+            'multiValueHeaders' => $request->getHeaders(),
+            'body' => (string) $body_stream,
+            'isBase64Encoded' => false,
+        ]);
+
+        // Ensure request body can be used again downstream
+        $body_stream->rewind();
+
+        return $request
+            ->withAttribute('lambda-context', Context::fake())
+            ->withAttribute('lambda-event', $event);
     }
 }
