@@ -34,7 +34,7 @@ class ResponseEmitter
         $statusCode = $response->getStatusCode();
 
         foreach ($response->getHeaders() as $header => $values) {
-            $name = $this->filterHeader($header);
+            $name = $this->filterHeader((string) $header);
             $first = $name !== 'Set-Cookie';
             foreach ($values as $value) {
                 header(sprintf(
