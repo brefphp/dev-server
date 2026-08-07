@@ -7,6 +7,7 @@ use Bref\Context\Context;
 use Bref\Event\Http\HttpRequestEvent;
 use Crwlr\QueryString\Query;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
@@ -47,7 +48,11 @@ class Handler
         $request = $this->requestFromGlobals();
         [$handler, $request] = $router->match($request);
         $controller = $handler ? $container->get($handler) : new NotFound;
-        $response = $controller->handle($request);
+        $context = $request->getAttribute('lambda-event')?->getRequestContext();
+        $response = $controller->handle($request, $context);
+        if (is_array($response)) {
+            $response = new Response(200, [], $response['body']);
+        }
         (new ResponseEmitter)->emit($response);
 
         return null;

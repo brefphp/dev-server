@@ -3,6 +3,7 @@
 namespace Bref\DevServer;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\Yaml\Yaml;
 
 use function is_array;
 
@@ -16,8 +17,11 @@ class Router
     public static function fromServerlessConfig(array $serverlessConfig): self
     {
         $routes = [];
-        foreach ($serverlessConfig['functions'] as $function) {
-            $pattern = $function['events'][0]['httpApi'] ?? null;
+        foreach ($serverlessConfig['functions'] as $functionConfig) {
+            //Check if function definition is included by another file
+            $function = self::checkIfFunctionIsIncludedByFile($functionConfig);
+            //Get pattern by events array
+            $pattern = self::getPatternByEvents($function['events']);
 
             if (! $pattern) {
                 continue;
@@ -32,6 +36,33 @@ class Router
         }
 
         return new self($routes);
+    }
+
+    public static function checkIfFunctionIsIncludedByFile(string|array $functionConfig): mixed
+    {
+        //Check if function is included by another file with ${file(./my/function/path)} syntax
+        if (is_string($functionConfig) && str_contains($functionConfig, '${file')) {
+            $init = strpos($functionConfig, '(') + 1; //path is always after an open parenthesis
+            $end = strpos($functionConfig, ')'); //path is always closed by a closed parenthesis
+            $functionFilePath = substr($functionConfig, $init, $end - $init); //get file path
+            $functionAttributes = Yaml::parseFile($functionFilePath, Yaml::PARSE_CUSTOM_TAGS); //parse function file yaml
+            //first element of the attributes array has the name of the function
+            return reset($functionAttributes);
+        }
+        return $functionConfig;
+    }
+
+    public static function getPatternByEvents(array $events): mixed
+    {
+        //Cycle events as they could be multiple
+        foreach ($events as $event) {
+            if (isset($event['http'])) { //Search for API Gateway v1 syntax
+                return $event['http'];
+            } elseif (isset($event['httpApi'])) { //Or for API Gateway v2 syntax
+                return $event['httpApi'];
+            }
+        }
+        return null;
     }
 
     private static function patternToString(array $pattern): string
@@ -115,7 +146,7 @@ class Router
         }
 
         $pathRegex = $this->patternToRegex($pathPattern);
-        preg_match($pathRegex, $requestPath, $matches);
+        preg_match($pathRegex, ltrim($requestPath, '/'), $matches);
         foreach ($matches as $name => $value) {
             $request = $request->withAttribute((string) $name, $value);
         }

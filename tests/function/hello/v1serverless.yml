@@ -1,0 +1,13 @@
+hello:
+  handler: hello.php #function handler
+  events: #events
+    #keep warm event
+    - schedule:
+        rate: rate(5 minutes)
+        enabled: true
+        input:
+          warmer: true
+    #api gateway event
+    - http:
+        path: /hello #api endpoint path
+        method: 'GET' #api endpoint method
